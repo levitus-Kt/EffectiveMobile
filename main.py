@@ -1,11 +1,25 @@
 import uvicorn
+import jwt
 from fastapi import FastAPI, Depends, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from schemas import UserLogin
+from security import SecurityService, PermissionChecker
 from mock_db import USERS
 
 app = FastAPI(title="Custom Auth System")
 templates = Jinja2Templates(directory="templates")
+
+
+@app.exception_handler(401)
+async def unauthorized_exception_handler(request: Request, exc: Exception):
+    return templates.TemplateResponse("401.html", {"request": request}, status_code=401)
+
+
+@app.exception_handler(403)
+async def forbidden_exception_handler(request: Request, exc: Exception):
+    return templates.TemplateResponse("403.html", {"request": request}, status_code=403)
+
 
 @app.get("/register", response_class=HTMLResponse)
 async def get_register_form(request: Request):
@@ -51,6 +65,22 @@ async def login(data: UserLogin):
     token = SecurityService.create_token(user["id"])
     return {"access_token": token, "token_type": "bearer"}
 
+
+# Mock-View для демонстрации прав доступа
+@app.get("/products", response_class=HTMLResponse)
+async def products_page(request: Request):
+    """Доступ к товарам только если в RULES прописано read_all_permission
+    Отдает только визуальную оболочку страницы"""
+    return templates.TemplateResponse("products.html", {"request": request})
+
+
+@app.get("/api/products")
+async def get_products_data(user: dict = Depends(PermissionChecker("products", "read_all"))):
+    """
+    Реальный API, который требует токен. 
+    Сюда запрос придет от JavaScript с заголовком Authorization.
+    """
+    return {"items": ["Ноутбук", "Смартфон", "Наушники"], "user": user["email"]}
 
 
 

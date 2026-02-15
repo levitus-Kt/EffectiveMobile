@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход в систему</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin: 0; }
+        .form-card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { text-align: center; color: #1c1e21; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #218838; }
+        .link { text-align: center; margin-top: 15px; font-size: 14px; color: #606770; }
+        #message { color: red; text-align: center; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="form-card">
+        <h2>С возвращением</h2>
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Пароль" required>
+            <button type="submit">Войти</button>
+        </form>
+        <div id="message"></div>
+        <div class="link">Нет аккаунта? <a href="/register">Зарегистрироваться</a></div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const result = await response.json();
+            
+            if (response.ok) {
+                // Сохраняем токен для последующих запросов
+                localStorage.setItem('access_token', result.access_token);
+                alert('Успешный вход! Токен сохранен.');
+                window.location.href = '/products'; 
+            } else {
+                const msgDiv = document.getElementById('message');
+                msgDiv.innerText = result.detail || 'Ошибка входа';
+                msgDiv.style.display = 'block';
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Список товаров</title>
+</head>
+<body>
+    <nav style="background: #eee; padding: 10px; margin-bottom: 20px;">
+        <a href="/admin-panel" style="color: red; font-weight: bold;">Админка)</a>
+        <button onclick="deleteAccount()" style="float: right; background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+            Удалить аккаунт
+        </button>
+    </nav>
+    <h1>Наши товары</h1>
+    <div id="content">Загрузка данных...</div>
+
+    <script>
+        async function loadProducts() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            const response = await fetch('/api/products', { // Запрос к API
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.status === 401) {
+                window.location.href = '/login';
+            } else if (response.status === 403) {
+                document.getElementById('content').innerHTML = '<h2 style="color:red">Ошибка 403: У вас нет прав доступа к товарам</h2>';
+            } else {
+                const data = await response.json();
+                document.getElementById('content').innerHTML = JSON.stringify(data.items);
+            }
+        }
+
+        async function deleteAccount() {
+            if (!confirm('Вы уверены? Вы больше не сможете войти в систему!')) return;
+
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('/api/auth/me', {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                alert('Аккаунт удален. Прощайте!');
+                localStorage.removeItem('access_token'); // Очистка на клиенте
+                window.location.href = '/register';
+            }
+        }
+
+        loadProducts();
+    </script>
+</body>
+</html>

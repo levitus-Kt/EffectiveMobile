@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация в системе</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin: 0; }
+        .form-card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { text-align: center; color: #1c1e21; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        .link { text-align: center; margin-top: 15px; font-size: 14px; color: #606770; }
+    </style>
+</head>
+<body>
+    <div class="form-card">
+        <h2>Создать аккаунт</h2>
+        <form action="/auth/register" method="POST">
+            <input type="text" name="last_name" placeholder="Фамилия" required>
+            <input type="text" name="first_name" placeholder="Имя" required>
+            <input type="text" name="middle_name" placeholder="Отчество (необязательно)">
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Пароль" required>
+            <input type="password" name="password_repeat" placeholder="Повторите пароль" required>
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+        <script>
+            document.querySelector('form').onsubmit = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    body: formData // FastAPI примет это как Form(...)
+                });
+
+                if (response.ok) {
+                    alert('Регистрация успешна! Сейчас вы будете перенаправлены на вход.');
+                    window.location.href = '/login'; // АВТОРЕДИРЕКТ
+                } else {
+                    const result = await response.json();
+                    alert(result.detail || 'Ошибка регистрации');
+                }
+            };
+        </script>
+        <div class="link">Уже есть аккаунт? <a href="/login">Войти</a></div>
+    </div>
+</body>
+</html>
