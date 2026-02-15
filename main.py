@@ -4,7 +4,7 @@ from fastapi import FastAPI, Depends, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from schemas import UserLogin
-from security import SecurityService, PermissionChecker
+from security import SecurityService, get_current_user, PermissionChecker
 from mock_db import USERS
 
 app = FastAPI(title="Custom Auth System")
@@ -38,6 +38,7 @@ async def register(
     new_user = {
         "id": len(USERS) + 1,
         "email": email,
+        "password_hash": SecurityService.hash_password(password),
         "role_id": 2, # Роль 'пользователь'
         "is_active": True,
         "first_name": first_name, "last_name": last_name
@@ -82,6 +83,30 @@ async def get_products_data(user: dict = Depends(PermissionChecker("products", "
     """
     return {"items": ["Ноутбук", "Смартфон", "Наушники"], "user": user["email"]}
 
+
+@app.get("/admin/users-list")
+def get_all_users(user: dict = Depends(PermissionChecker("users", "read_all"))):
+    """Доступ к списку юзеров только для Админа"""
+    return USERS
+
+
+@app.get("/admin-panel", response_class=HTMLResponse)
+async def admin_panel_page(request: Request):
+    """
+    Эта страница недоступна для обычного пользователя.
+    PermissionChecker выбросит 403, и сработает exception_handler.
+    """
+    return templates.TemplateResponse("admin_panel.html", {"request": request})
+
+@app.delete("/api/auth/me")
+async def soft_delete_account(user: dict = Depends(get_current_user)):
+    """
+    Мягкое удаление:
+    1. Находим пользователя в нашем Mock-списке.
+    2. Меняем флаг is_active на False.
+    """
+    user["is_active"] = False # Мягкое удаление выполнено
+    return {"status": "success", "message": "Аккаунт деактивирован"}
 
 
 if __name__ == "__main__":
